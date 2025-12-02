@@ -6,6 +6,9 @@
 bin/
 BinanceQuotationsApp
 
+# Build directory
+build/
+
 # Test binaries and cache for the current package
 *.test
 *.out

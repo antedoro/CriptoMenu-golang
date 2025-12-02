@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath" // Added for path manipulation
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -16,6 +16,8 @@ import (
 	binance_connector "github.com/binance/binance-connector-go"
 	"github.com/getlantern/systray"
 )
+
+// ... (Rest of the structs and vars remain the same) ...
 
 // Config struct to hold application preferences
 type Config struct {
@@ -72,6 +74,7 @@ func onReady() {
 		for range mEditConfig.ClickedCh {
 			configPath, _ := getConfigFilePath()
 			log.Printf("Opening config file at %s...", configPath)
+			
 			cmd := exec.Command("open", configPath)
 			err := cmd.Run()
 			if err != nil {
@@ -81,6 +84,7 @@ func onReady() {
 	}()
 
 	systray.AddSeparator()
+// ... (Rest of the code remains the same) ...
 
 	// "Quit" menu item
 	mQuit := systray.AddMenuItem("Quit", "Quit the app")
@@ -113,6 +117,7 @@ func fetchPrices() {
 		pair := getPair()
 		if pair == "" {
 			systray.SetTitle("No Pair")
+			systray.SetTooltip("No Pair") // Re-adding original tooltip logic
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -122,6 +127,7 @@ func fetchPrices() {
 			log.Printf("Error fetching %s price: %v", pair, err)
 			if getPair() == pair {
 				systray.SetTitle("Error")
+				systray.SetTooltip("Error") // Re-adding original tooltip logic
 			}
 		} else if len(res) > 0 {
 			priceStr := res[0].Price
@@ -130,21 +136,27 @@ func fetchPrices() {
 				log.Printf("Error parsing price string to float: %v", err)
 				if getPair() == pair {
 					systray.SetTitle(fmt.Sprintf("%s: Err", pair))
+					systray.SetTooltip(fmt.Sprintf("%s: Err", pair)) // Re-adding original tooltip logic
 				}
 			} else {
 				roundedPrice := fmt.Sprintf("%.2f", priceFloat)
 				if getPair() == pair {
 					systray.SetTitle(fmt.Sprintf("%s: %s", pair, roundedPrice))
+					systray.SetTooltip(fmt.Sprintf("%s: %s", pair, roundedPrice)) // Re-adding original tooltip logic
 				}
 			}
 		} else {
 			if getPair() == pair {
 				systray.SetTitle("N/A")
+				systray.SetTooltip("N/A") // Re-adding original tooltip logic
 			}
 		}
 		time.Sleep(30 * time.Second) // Update every 30 seconds
 	}
 }
+
+// updateDisplay was removed.
+// The systray.SetTooltip("CriptoMenu") in onReady is sufficient as a base.
 
 func watchConfig() {
 	ticker := time.NewTicker(2 * time.Second)
@@ -220,7 +232,7 @@ func handlePairClick(index int) {
 		selectedPair := activeConfig.Pairs[index]
 		log.Printf("Selected pair: %s", selectedPair)
 		setPair(selectedPair)
-		systray.SetTitle(fmt.Sprintf("%s: ...", selectedPair))
+		systray.SetTitle(fmt.Sprintf("%s: ...", selectedPair)) // Reverted to original
 	}
 }
 
