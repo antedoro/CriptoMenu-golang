@@ -1,31 +1,31 @@
 # CriptoMenu
 
-CriptoMenu è una semplice applicazione per la menubar di macOS che ti permette di monitorare in tempo reale le quotazioni di criptovalute da Binance.
+CriptoMenu is a simple macOS menubar application that allows you to monitor cryptocurrency quotes from Binance in real-time.
 
-## Caratteristiche
+## Features
 
-*   **Quotazioni in tempo reale:** Visualizza il prezzo di una coppia di criptovalute selezionata direttamente nella menubar.
-*   **Supporto Binance:** Si connette all'API Spot di Binance per ottenere dati sui prezzi.
-*   **Prezzi arrotondati:** I prezzi sono visualizzati arrotondati a due cifre decimali.
-*   **Configurazione flessibile:** Definisci le coppie di criptovalute da monitorare tramite un file di configurazione JSON.
-*   **Menu interattivo:**
-    *   **Monitored Pairs:** Seleziona al volo la coppia da visualizzare tra quelle configurate.
-    *   **Edit Config:** Apre il file di configurazione `~/.criptomenu.json` nel tuo editor predefinito per una facile modifica.
-    *   **Aggiornamento automatico:** Il menu "Monitored Pairs" si aggiorna automaticamente quando salvi le modifiche al file di configurazione.
-    *   **Quit:** Esce dall'applicazione.
-*   **Applicazione Standalone:** Distribuita come un'applicazione `.app` nativa per macOS.
+*   **Real-time Quotes:** Displays the price of a selected cryptocurrency pair directly in the menubar.
+*   **Binance Support:** Connects to the Binance Spot API to fetch price data.
+*   **Rounded Prices:** Prices are displayed rounded to two decimal places.
+*   **Flexible Configuration:** Define the cryptocurrency pairs to monitor via a JSON configuration file.
+*   **Interactive Menu:**
+    *   **Monitored Pairs:** Select the pair to display on the fly from your configured list.
+    *   **Edit Config:** Opens the `~/.criptomenu.json` configuration file in your default editor for easy modification.
+    *   **Automatic Update:** The "Monitored Pairs" menu automatically updates when you save changes to the configuration file.
+    *   **Quit:** Exits the application.
+*   **Standalone Application:** Distributed as a native macOS `.app` application.
 
-## Installazione
+## Installation
 
-1.  **Clona il repository (se disponibile) o scarica i file sorgente.**
-2.  **Assicurati di avere Go installato.** Puoi scaricarlo da [go.dev](https://go.dev/dl/).
-3.  **Costruisci l'applicazione:**
-    Apri il terminale nella directory principale del progetto e usa i seguenti comandi:
+1.  **Clone the repository (if available) or download the source files.**
+2.  **Ensure you have Go installed.** You can download it from [go.dev](https://go.dev/dl/).
+3.  **Build the application:**
+    Open your terminal in the project's root directory and use the following commands:
     ```bash
     go build -o CriptoMenu.app/Contents/MacOS/CriptoMenu
     ```
-4.  **Genera l'icona dell'applicazione (.icns):**
-    Assicurati di avere un file `icon.png` (idealmente quadrato, di buona qualità) nella directory del progetto. Questo script creerà l'icona `.icns` e la inserirà nel bundle dell'app:
+4.  **Generate the application icon (.icns):**
+    Make sure you have an `icon.png` file (ideally square, good quality) in your project directory. This script will create the `.icns` icon and place it in the app bundle:
     ```bash
     mkdir CriptoMenu.iconset
     sips -z 16 16     icon.png --out CriptoMenu.iconset/icon_16x16.png
@@ -42,8 +42,8 @@ CriptoMenu è una semplice applicazione per la menubar di macOS che ti permette 
     mv CriptoMenu.icns CriptoMenu.app/Contents/Resources/AppIcon.icns
     rm -rf CriptoMenu.iconset
     ```
-5.  **Crea il file `Info.plist`:**
-    Questo file definisce i metadati dell'applicazione. Crealo come `CriptoMenu.app/Contents/Info.plist` con il seguente contenuto:
+5.  **Create the `Info.plist` file:**
+    This file defines the application's metadata. Create it as `CriptoMenu.app/Contents/Info.plist` with the following content:
     ```xml
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -68,38 +68,38 @@ CriptoMenu è una semplice applicazione per la menubar di macOS che ti permette 
     </dict>
     </plist>
     ```
-6.  **Crea il file `PkgInfo`:**
-    Questo è un piccolo file per macOS. Crealo come `CriptoMenu.app/Contents/PkgInfo` con il seguente contenuto:
+6.  **Create the `PkgInfo` file:**
+    This is a small file for macOS. Create it as `CriptoMenu.app/Contents/PkgInfo` with the following content:
     ```
     APPL????
     ```
-7.  **Sposta l'applicazione:**
-    Sposta la cartella `CriptoMenu.app` nella cartella `/Applications` o in qualsiasi altra posizione desiderata.
+7.  **Move the application:**
+    Move the `CriptoMenu.app` folder to your `/Applications` folder or any other desired location.
 
-## Utilizzo
+## Usage
 
-1.  **Avvia l'applicazione:** Fai doppio click su `CriptoMenu.app`.
-2.  **Configura le coppie da monitorare:**
-    *   Clicca sull'icona dell'applicazione nella menubar.
-    *   Seleziona "Edit Config". Si aprirà il file `~/.criptomenu.json` nel tuo editor predefinito.
-    *   Modifica l'array `"Pairs"` con le coppie di criptovalute che desideri monitorare (es. `["BTCUSDC", "ETHUSDC", "BNBUSDT"]`).
-    *   Salva il file. Il menu "Monitored Pairs" si aggiornerà automaticamente.
-3.  **Seleziona la coppia da visualizzare:**
-    *   Clicca sull'icona dell'applicazione nella menubar.
-    *   Passa il mouse su "Monitored Pairs".
-    *   Clicca sulla coppia che vuoi visualizzare nella menubar.
+1.  **Launch the application:** Double-click on `CriptoMenu.app`.
+2.  **Configure monitored pairs:**
+    *   Click on the application icon in the menubar.
+    *   Select "Edit Config". This will open the `~/.criptomenu.json` file in your default editor.
+    *   Modify the `"Pairs"` array with the cryptocurrency pairs you wish to monitor (e.g., `["BTCUSDC", "ETHUSDC", "BNBUSDT"]`).
+    *   Save the file. The "Monitored Pairs" menu will update automatically.
+3.  **Select the pair to display:**
+    *   Click on the application icon in the menubar.
+    *   Hover over "Monitored Pairs".
+    *   Click on the pair you want to display in the menubar.
 
-## Risoluzione dei Problemi
+## Troubleshooting
 
-*   **Icona non visualizzata correttamente:** Se l'icona dell'app non appare o mostra un'icona generica, il sistema potrebbe averla messa in cache. Prova a spostare `CriptoMenu.app` in un'altra cartella e poi di nuovo nella sua posizione originale, oppure esegui il seguente comando nel terminale:
+*   **Icon not displayed correctly:** If the app icon doesn't appear or shows a generic icon, the system might have cached it. Try moving `CriptoMenu.app` to another folder and then back to its original location, or run the following command in the terminal:
     ```bash
     touch CriptoMenu.app; killall Dock; killall Finder
     ```
-*   **Prezzi non aggiornati / Errori:** Assicurati di avere una connessione internet attiva. Verifica che i simboli delle coppie in `~/.criptomenu.json` siano validi su Binance (es. `BTCUSDC`, non `BTC-USDC`).
+*   **Prices not updating / Errors:** Ensure you have an active internet connection. Verify that the pair symbols in `~/.criptomenu.json` are valid on Binance (e.g., `BTCUSDC`, not `BTC-USDC`).
 
-## Tecnologie Utilizzate
+## Technologies Used
 
-*   **Go Lang:** Il linguaggio di programmazione principale.
-*   **systray:** Libreria per la gestione dell'icona e del menu nella system tray.
-*   **Binance Connector Go:** Libreria per interagire con l'API di Binance.
-*   **AppleScript (osascript):** Utilizzato per aprire il file di configurazione con l'editor predefinito.
+*   **Go Lang:** The primary programming language.
+*   **systray:** Library for managing the system tray icon and menu.
+*   **Binance Connector Go:** Library for interacting with the Binance API.
+*   **AppleScript (osascript):** Used to open the configuration file with the default editor.
