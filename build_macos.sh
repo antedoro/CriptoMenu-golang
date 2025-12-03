@@ -2,7 +2,7 @@
 
 # Configuration
 APP_NAME="CriptoMenu"
-ICON_PNG="/Users/antedoro/Desktop/BinanceQuotations /icon.png" # Path to your source PNG icon
+ICON_PNG="icon.png" # Path to your source PNG icon
 BUILD_DIR="./build" # Directory for build artifacts
 
 # --- Script Start ---

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -66,7 +67,30 @@ func onReady() {
 	// Initialize the submenus based on current config
 	updatePairsMenu()
 
-	systray.AddSeparator()
+    // "Market Chart" menu item
+    mMarketChart := systray.AddMenuItem("Market Chart", "Open Binance chart for current pair")
+    go func() {
+        for range mMarketChart.ClickedCh {
+            pair := getPair()
+            if pair == "" {
+                continue
+            }
+            // Simple heuristic to split pair for URL: BTCUSDC -> BTC_USDC
+            // Common quote currencies
+            quotes := []string{"USDT", "USDC", "BUSD", "EUR", "BTC", "ETH", "BNB"}
+            formattedPair := pair
+            for _, q := range quotes {
+                if strings.HasSuffix(pair, q) && len(pair) > len(q) {
+                    formattedPair = pair[:len(pair)-len(q)] + "_" + q
+                    break
+                }
+            }
+            
+            url := fmt.Sprintf("https://www.binance.com/it/trade/%s?type=spot", formattedPair)
+            log.Printf("Opening chart: %s", url)
+            _ = exec.Command("open", url).Run()
+        }
+    }()
 
 	// "Edit Config" menu item
 	mEditConfig := systray.AddMenuItem("Edit Config", "Open config.json")
@@ -83,8 +107,15 @@ func onReady() {
 		}
 	}()
 
+    // "About" menu item
+    mAbout := systray.AddMenuItem("About", "Open GitHub project page")
+    go func() {
+        for range mAbout.ClickedCh {
+             _ = exec.Command("open", "https://github.com/antedoro/CriptoMenu-golang").Run()
+        }
+    }()
+
 	systray.AddSeparator()
-// ... (Rest of the code remains the same) ...
 
 	// "Quit" menu item
 	mQuit := systray.AddMenuItem("Quit", "Quit the app")
