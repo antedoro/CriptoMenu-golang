@@ -10,8 +10,11 @@ CriptoMenu is a simple macOS menubar application that allows you to monitor cryp
 *   **Flexible Configuration:** Define the cryptocurrency pairs to monitor via a JSON configuration file.
 *   **Interactive Menu:**
     *   **Monitored Pairs:** Select the pair to display on the fly from your configured list.
+    *   **Market Chart:** Opens the Binance trading view for the currently selected cryptocurrency pair.
     *   **Edit Config:** Opens the `~/.criptomenu.json` configuration file in your default editor for easy modification.
-    *   **Automatic Update:** The "Monitored Pairs" menu automatically updates when you save changes to the configuration file.
+    *   **About:** Opens the project's GitHub page in your default browser.
+    *   **Immediate Price Update:** Price in the menubar updates instantly when a new pair is selected.
+    *   **Automatic Config Update:** The "Monitored Pairs" menu automatically updates when you save changes to the configuration file.
     *   **Quit:** Exits the application.
 *   **Standalone Application:** Distributed as a native macOS `.app` application.
 

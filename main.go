@@ -37,6 +37,9 @@ var (
 	// Menu items state
 	mPairs        *systray.MenuItem
 	pairMenuItems []*systray.MenuItem
+    
+    // Channel to trigger immediate price update
+    updateChan = make(chan struct{}, 1)
 )
 
 func main() {
@@ -144,46 +147,61 @@ func fetchPrices() {
 	log.Println("Price fetching goroutine started.")
 	client := binance_connector.NewClient("", "", "https://api.binance.com")
 	
-	for {
-		pair := getPair()
-		if pair == "" {
-			systray.SetTitle("No Pair")
-			systray.SetTooltip("No Pair") // Re-adding original tooltip logic
-			time.Sleep(1 * time.Second)
-			continue
-		}
+    // Initial update
+    updatePrice(client)
 
-		res, err := client.NewTickerPriceService().Symbol(pair).Do(context.Background())
-		if err != nil {
-			log.Printf("Error fetching %s price: %v", pair, err)
-			if getPair() == pair {
-				systray.SetTitle("Error")
-				systray.SetTooltip("Error") // Re-adding original tooltip logic
-			}
-		} else if len(res) > 0 {
-			priceStr := res[0].Price
-			priceFloat, err := strconv.ParseFloat(priceStr, 64)
-			if err != nil {
-				log.Printf("Error parsing price string to float: %v", err)
-				if getPair() == pair {
-					systray.SetTitle(fmt.Sprintf("%s: Err", pair))
-					systray.SetTooltip(fmt.Sprintf("%s: Err", pair)) // Re-adding original tooltip logic
-				}
-			} else {
-				roundedPrice := fmt.Sprintf("%.2f", priceFloat)
-				if getPair() == pair {
-					systray.SetTitle(fmt.Sprintf("%s: %s", pair, roundedPrice))
-					systray.SetTooltip(fmt.Sprintf("%s: %s", pair, roundedPrice)) // Re-adding original tooltip logic
-				}
-			}
-		} else {
-			if getPair() == pair {
-				systray.SetTitle("N/A")
-				systray.SetTooltip("N/A") // Re-adding original tooltip logic
-			}
-		}
-		time.Sleep(30 * time.Second) // Update every 30 seconds
+    ticker := time.NewTicker(30 * time.Second)
+    defer ticker.Stop()
+
+	for {
+        select {
+        case <-ticker.C:
+            updatePrice(client)
+        case <-updateChan:
+            log.Println("Immediate price update triggered.")
+            updatePrice(client)
+            ticker.Reset(30 * time.Second) // Reset ticker to avoid double update
+        }
 	}
+}
+
+func updatePrice(client *binance_connector.Client) {
+    pair := getPair()
+    if pair == "" {
+        systray.SetTitle("No Pair")
+        systray.SetTooltip("No Pair")
+        return
+    }
+
+    res, err := client.NewTickerPriceService().Symbol(pair).Do(context.Background())
+    if err != nil {
+        log.Printf("Error fetching %s price: %v", pair, err)
+        if getPair() == pair {
+            systray.SetTitle("Error")
+            systray.SetTooltip("Error")
+        }
+    } else if len(res) > 0 {
+        priceStr := res[0].Price
+        priceFloat, err := strconv.ParseFloat(priceStr, 64)
+        if err != nil {
+            log.Printf("Error parsing price string to float: %v", err)
+            if getPair() == pair {
+                systray.SetTitle(fmt.Sprintf("%s: Err", pair))
+                systray.SetTooltip(fmt.Sprintf("%s: Err", pair))
+            }
+        } else {
+            roundedPrice := fmt.Sprintf("%.2f", priceFloat)
+            if getPair() == pair {
+                systray.SetTitle(fmt.Sprintf("%s: %s", pair, roundedPrice))
+                systray.SetTooltip(fmt.Sprintf("%s: %s", pair, roundedPrice))
+            }
+        }
+    } else {
+        if getPair() == pair {
+            systray.SetTitle("N/A")
+            systray.SetTooltip("N/A")
+        }
+    }
 }
 
 // updateDisplay was removed.
@@ -264,6 +282,13 @@ func handlePairClick(index int) {
 		log.Printf("Selected pair: %s", selectedPair)
 		setPair(selectedPair)
 		systray.SetTitle(fmt.Sprintf("%s: ...", selectedPair)) // Reverted to original
+        
+        // Trigger immediate update
+        select {
+        case updateChan <- struct{}{}:
+        default:
+            // Channel full, update already pending
+        }
 	}
 }
 
