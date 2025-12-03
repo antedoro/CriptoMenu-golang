@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Script per automatizzare il rilascio di una nuova versione su GitHub.
-# Utilizzo: ./release.sh <versione>
-# Esempio: ./release.sh 1.2.0
+# Utilizzo: ./new-release.sh <versione>
+# Esempio: ./new-release.sh 1.2.0
 # Nota: Ricordati di aggiornare il file CHANGELOG.md prima di lanciare lo script 
 # se vuoi che le modifiche siano tracciate lì, anche se la release su GitHub 
 # avrà comunque le note generate automaticamente dai commit.
