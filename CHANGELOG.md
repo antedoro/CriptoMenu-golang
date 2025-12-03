@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-12-03
+
+### Changed
+
+- Enhanced monitoring: The application now fetches prices for all unique pairs specified in the active alerts list, in addition to the currently selected pair, enabling comprehensive background monitoring of alert conditions.
+- Improved macOS alert notifications: Switched from subtle notification banners to a modal `display alert` dialog for critical price alerts on macOS, ensuring visibility even when notifications are otherwise suppressed.
+
+### Fixed
+
+- Resolved an issue where `~/.criptomenu.json` could be overwritten with default settings if a JSON parsing error occurred, preventing loss of user configurations.
+
 ## [1.1.0] - 2025-12-03
 
 ### Added

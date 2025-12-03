@@ -92,6 +92,55 @@ CriptoMenu is a simple macOS menubar application that allows you to monitor cryp
     *   Hover over "Monitored Pairs".
     *   Click on the pair you want to display in the menubar.
 
+## Configuration Example
+
+You can configure the application by editing the `~/.criptomenu.json` file. This file supports both a list of pairs to display in the menu and a list of alerts to trigger notifications when price targets are met.
+
+Here is an example of a complete configuration file:
+
+```json
+{
+  "Pairs": [
+    "BTCUSDC",
+    "ETHUSDC",
+    "BNBUSDT"
+  ],
+  "Alerts": [
+    {
+      "id": "btc-high-alert",
+      "pair": "BTCUSDC",
+      "target": 70000.0,
+      "condition": "above",
+      "active": true
+    },
+    {
+      "id": "eth-low-alert",
+      "pair": "ETHUSDC",
+      "target": 3500.0,
+      "condition": "below",
+      "active": true
+    },
+    {
+      "id": "bnb-high-alert",
+      "pair": "BNBUSDT",
+      "target": 600.0,
+      "condition": "above",
+      "active": true
+    }
+  ]
+}
+```
+
+### Configuration Fields
+
+*   **`Pairs`**: An array of strings specifying the cryptocurrency pairs to appear in the "Monitored Pairs" submenu.
+*   **`Alerts`**: An array of alert objects. Each alert checks the price of a specific pair (even if not currently displayed in the menubar) and triggers a notification if the condition is met.
+    *   **`id`**: (Optional) A unique identifier for the alert.
+    *   **`pair`**: The cryptocurrency pair to monitor (e.g., "BTCUSDC").
+    *   **`target`**: The price target that triggers the alert.
+    *   **`condition`**: The condition for the trigger ("above" or "below").
+    *   **`active`**: Set to `true` to enable the alert. Once triggered, this is automatically set to `false` by the application.
+
 ## Troubleshooting
 
 *   **Icon not displayed correctly:** If the app icon doesn't appear or shows a generic icon, the system might have cached it. Try moving `CriptoMenu.app` to another folder and then back to its original location, or run the following command in the terminal:
