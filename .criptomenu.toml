@@ -15,7 +15,7 @@ Pairs = [
 [[Alerts]]
   pair = "BTCUSDC"
   target = 100000.0
-  condition = "above" or "below"
+  condition = "above" # or "below"
   active = true
 
 # [[Alerts]]

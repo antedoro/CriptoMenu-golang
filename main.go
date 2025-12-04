@@ -31,8 +31,9 @@ type Alert struct {
 
 // Config struct to hold application preferences
 type Config struct {
-	Pairs  []string `toml:"Pairs"`
-	Alerts []Alert  `toml:"Alerts"`
+	Pairs      []string `toml:"Pairs"`
+	Alerts     []Alert  `toml:"Alerts"`
+	PinnedPair string   `toml:"pinned_pair,omitempty"`
 }
 
 var (
@@ -44,8 +45,13 @@ var (
 	activeConfig *Config
 	configMutex  sync.RWMutex
 
+	// Price Cache
+	latestPrices      = make(map[string]float64)
+	latestPricesMutex sync.RWMutex
+
 	// Menu items state
 	mPairs        *systray.MenuItem
+	mPin          *systray.MenuItem // New Pinned Item
 	pairMenuItems []*systray.MenuItem
 
 	// Channel to trigger immediate price update
@@ -80,6 +86,36 @@ func onReady() {
 	// Initialize the submenus based on current config
 	updatePairsMenu()
 
+	// "Pin/Unpin" menu item
+	mPin = systray.AddMenuItem("Pin Current Pair", "Fix the current pair to the menu bar")
+	go func() {
+		for range mPin.ClickedCh {
+			configMutex.Lock()
+			current := getPair()
+			
+			if activeConfig.PinnedPair == current {
+				// Unpin
+				activeConfig.PinnedPair = ""
+				mPin.SetTitle("Pin " + current)
+			} else {
+				// Pin
+				activeConfig.PinnedPair = current
+				mPin.SetTitle("Unpin " + current)
+			}
+			
+			// Save config
+			err := saveConfigInternal(activeConfig)
+			configMutex.Unlock()
+			
+			if err != nil {
+				log.Printf("Error saving config after pin/unpin: %v", err)
+			} else {
+				// Force UI update
+				updatePairsMenu() // Refresh checkmarks if implemented, or just state
+			}
+		}
+	}()
+
 	// "Market Chart" menu item
 	mMarketChart := systray.AddMenuItem("Market Chart", "Open Binance chart for current pair")
 	go func() {
@@ -107,6 +143,12 @@ func onReady() {
 
 	// "Edit Config" menu item
 	mEditConfig := systray.AddMenuItem("Edit Config", "Open config.toml")
+	
+	// Update tooltip with actual path
+	if path, err := getConfigFilePath(); err == nil {
+		mEditConfig.SetTooltip(fmt.Sprintf("Editing: %s", path))
+	}
+
 	go func() {
 		for range mEditConfig.ClickedCh {
 			configPath, _ := getConfigFilePath()
@@ -144,6 +186,9 @@ func onReady() {
 	// Start price fetching
 	go fetchPrices()
 
+	// Start Pair Rotation (Carousel)
+	go rotatePairs()
+
 	log.Println("onReady finished.")
 }
 
@@ -152,6 +197,74 @@ func onExit() {
 }
 
 // --- Core Logic ---
+
+func rotatePairs() {
+	log.Println("Pair rotation started.")
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		configMutex.RLock()
+		pairs := activeConfig.Pairs
+		pinned := activeConfig.PinnedPair
+		configMutex.RUnlock()
+
+		// Check if pinned
+		if pinned != "" {
+			setPair(pinned)
+			
+			// Update UI immediately from cache
+			latestPricesMutex.RLock()
+			price, ok := latestPrices[pinned]
+			latestPricesMutex.RUnlock()
+
+			if ok {
+				roundedPrice := fmt.Sprintf("%.2f", price)
+				systray.SetTitle(fmt.Sprintf("%s: %s", pinned, roundedPrice))
+			} else {
+				systray.SetTitle(fmt.Sprintf("%s: ...", pinned))
+			}
+			continue
+		}
+
+		if len(pairs) <= 1 {
+			continue
+		}
+
+		current := getPair()
+		nextIndex := 0
+		found := false
+
+		// Find current index
+		for i, p := range pairs {
+			if p == current {
+				nextIndex = (i + 1) % len(pairs)
+				found = true
+				break
+			}
+		}
+		
+		// If current pair isn't in list (e.g. config changed), start at 0
+		if !found {
+			nextIndex = 0
+		}
+
+		nextPair := pairs[nextIndex]
+		setPair(nextPair)
+
+		// Update UI immediately from cache
+		latestPricesMutex.RLock()
+		price, ok := latestPrices[nextPair]
+		latestPricesMutex.RUnlock()
+
+		if ok {
+			roundedPrice := fmt.Sprintf("%.2f", price)
+			systray.SetTitle(fmt.Sprintf("%s: %s", nextPair, roundedPrice))
+		} else {
+			systray.SetTitle(fmt.Sprintf("%s: ...", nextPair))
+		}
+	}
+}
 
 func fetchPrices() {
 	log.Println("Price fetching goroutine started.")
@@ -177,30 +290,29 @@ func fetchPrices() {
 
 func updatePrice(client *binance_connector.Client) {
 	// Identify all unique pairs to fetch:
-	// 1. The currently selected pair (for the menu bar display)
-	// 2. Any pair that has an active alert (for background monitoring)
-	pairsToFetch := make(map[string]bool)
 
-	current := getPair()
-	if current != "" {
-		pairsToFetch[current] = true
-	}
+pairsToFetch := make(map[string]bool)
 
 	configMutex.RLock()
 	if activeConfig != nil {
+		// Fetch ALL configured pairs (for rotation)
+		for _, p := range activeConfig.Pairs {
+			pairsToFetch[p] = true
+		}
+		// Fetch Alert pairs (for monitoring)
 		for _, alert := range activeConfig.Alerts {
 			if alert.Active {
 				pairsToFetch[alert.Pair] = true
 			}
 		}
+		// Fetch Pinned pair
+		if activeConfig.PinnedPair != "" {
+			pairsToFetch[activeConfig.PinnedPair] = true
+		}
 	}
 	configMutex.RUnlock()
 
 	if len(pairsToFetch) == 0 {
-		if current == "" {
-			systray.SetTitle("No Pair")
-			systray.SetTooltip("No Pair")
-		}
 		return
 	}
 
@@ -211,11 +323,6 @@ func updatePrice(client *binance_connector.Client) {
 		// Handle fetch error
 		if err != nil {
 			log.Printf("Error fetching %s price: %v", pair, err)
-			// Only update UI error if it's the currently displayed pair
-			if pair == getPair() {
-				systray.SetTitle("Error")
-				systray.SetTooltip("Error")
-			}
 			continue
 		}
 
@@ -225,12 +332,13 @@ func updatePrice(client *binance_connector.Client) {
 			priceFloat, err := strconv.ParseFloat(priceStr, 64)
 			if err != nil {
 				log.Printf("Error parsing price string for %s: %v", pair, err)
-				if pair == getPair() {
-					systray.SetTitle(fmt.Sprintf("%s: Err", pair))
-					systray.SetTooltip(fmt.Sprintf("%s: Err", pair))
-				}
 				continue
 			}
+
+			// Update Cache
+			latestPricesMutex.Lock()
+			latestPrices[pair] = priceFloat
+			latestPricesMutex.Unlock()
 
 			// Update UI ONLY if this is the currently selected pair
 			if pair == getPair() {
@@ -241,13 +349,6 @@ func updatePrice(client *binance_connector.Client) {
 
 			// Check alerts for this pair (always, for background monitoring)
 			checkAlerts(pair, priceFloat)
-
-		} else {
-			// Empty response
-			if pair == getPair() {
-				systray.SetTitle("N/A")
-				systray.SetTooltip("N/A")
-			}
 		}
 	}
 }
@@ -347,6 +448,17 @@ func watchConfig() {
 	}
 }
 
+// Helper to show error alerts
+func showErrorAlert(title, message string) {
+	if runtime.GOOS == "darwin" {
+		go func() {
+			safeMsg := strings.ReplaceAll(message, "\"", "\\\"")
+			script := fmt.Sprintf("display alert \"%s\" message \"%s\" as critical", title, safeMsg)
+			_ = exec.Command("osascript", "-e", script).Run()
+		}()
+	}
+}
+
 func loadAndSetConfig() {
 	cfg, err := loadConfig()
 	if err != nil {
@@ -367,7 +479,9 @@ func loadAndSetConfig() {
 			}
 		} else if strings.Contains(err.Error(), "toml:") || strings.Contains(err.Error(), "decode") {
 			// TOML syntax error
-			log.Printf("Config file has invalid TOML, ignoring changes: %v", err)
+			errMsg := fmt.Sprintf("Config file has invalid TOML. Using default.\nError: %v", err)
+			log.Printf(errMsg)
+			showErrorAlert("Config Error", errMsg)
 			
 			configMutex.RLock()
 			hasConfig := activeConfig != nil
@@ -380,7 +494,10 @@ func loadAndSetConfig() {
 			cfg = &Config{Pairs: []string{"BTCUSDC", "ETHUSDC"}}
 		} else {
 			// Other errors
-			log.Printf("Error loading config: %v", err)
+			errMsg := fmt.Sprintf("Error loading config. Using default.\nError: %v", err)
+			log.Printf(errMsg)
+			showErrorAlert("Config Error", errMsg)
+
 			cfg = &Config{Pairs: []string{"BTCUSDC", "ETHUSDC"}}
 		}
 	}
@@ -458,7 +575,7 @@ func updatePairsMenu() {
 		}(i, item)
 	}
 
-	// Update existing items
+	// Update existing items and hide excess ones
 	for i, item := range pairMenuItems {
 		if i < len(pairs) {
 			item.SetTitle(pairs[i])
@@ -493,6 +610,19 @@ func setPair(pair string) {
 	currentPairMutex.Lock()
 	defer currentPairMutex.Unlock()
 	currentPair = pair
+
+	// Update Pin menu text
+	if mPin != nil {
+		configMutex.RLock()
+		pinned := activeConfig.PinnedPair
+		configMutex.RUnlock()
+
+		if pinned == pair {
+			mPin.SetTitle("Unpin " + pair)
+		} else {
+			mPin.SetTitle("Pin " + pair)
+		}
+	}
 }
 
 func getPair() string {
@@ -504,14 +634,31 @@ func getPair() string {
 // --- Config Helpers ---
 
 func getConfigFilePath() (string, error) {
-	// Check current working directory first (Development mode)
+	// 1. Check CWD (works for 'go run' and terminal launch)
 	localPath, _ := filepath.Abs(".criptomenu.toml")
 	if _, err := os.Stat(localPath); err == nil {
-		// Only log this once or it might be spammy, but for now it's helpful
 		return localPath, nil
 	}
 
-	// Fallback to Home directory (Production/App mode)
+	// 2. Check relative to Executable (Traverse up)
+	exePath, err := os.Executable()
+	if err == nil {
+		dir := filepath.Dir(exePath)
+		// Traverse up to 5 levels (covers Content/MacOS/Bundle/Build/ProjectRoot)
+		for i := 0; i < 5; i++ {
+			checkPath := filepath.Join(dir, ".criptomenu.toml")
+			if _, err := os.Stat(checkPath); err == nil {
+				return checkPath, nil
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break // Hit root
+			}
+			dir = parent
+		}
+	}
+
+	// 3. Fallback to Home directory (Production/App mode)
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
