@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -18,23 +17,22 @@ import (
 	binance_connector "github.com/binance/binance-connector-go"
 	"github.com/gen2brain/beeep"
 	"github.com/getlantern/systray"
+	"github.com/pelletier/go-toml/v2"
 )
-
-// ... (Rest of the structs and vars remain the same) ...
 
 // Alert struct defines a price alert condition
 type Alert struct {
-	ID        string  `json:"id,omitempty"` // Optional identifier
-	Pair      string  `json:"pair"`
-	Target    float64 `json:"target"`
-	Condition string  `json:"condition"` // "above", "below"
-	Active    bool    `json:"active"`
+	ID        string  `toml:"id,omitempty"` // Optional identifier
+	Pair      string  `toml:"pair"`
+	Target    float64 `toml:"target"`
+	Condition string  `toml:"condition"` // "above", "below"
+	Active    bool    `toml:"active"`
 }
 
 // Config struct to hold application preferences
 type Config struct {
-	Pairs  []string `json:"Pairs"`
-	Alerts []Alert  `json:"Alerts"`
+	Pairs  []string `toml:"Pairs"`
+	Alerts []Alert  `toml:"Alerts"`
 }
 
 var (
@@ -108,13 +106,13 @@ func onReady() {
 	}()
 
 	// "Edit Config" menu item
-	mEditConfig := systray.AddMenuItem("Edit Config", "Open config.json")
+	mEditConfig := systray.AddMenuItem("Edit Config", "Open config.toml")
 	go func() {
 		for range mEditConfig.ClickedCh {
 			configPath, _ := getConfigFilePath()
 			log.Printf("Opening config file at %s...", configPath)
 
-			cmd := exec.Command("open", configPath)
+			cmd := exec.Command("open", "-t", configPath)
 			err := cmd.Run()
 			if err != nil {
 				log.Printf("Error opening config file: %v", err)
@@ -310,17 +308,12 @@ func checkAlerts(pair string, price float64) {
 
 	if alertsChanged {
 		// Save config to persist the deactivated state
-		// We need to call the save logic. Since saveConfig reads the path again, it's safe.
-		// But saveConfig takes a *Config. We modify activeConfig in place.
 		err := saveConfigInternal(cfg)
 		if err != nil {
 			log.Printf("Error saving config after alert trigger: %v", err)
 		}
 	}
 }
-
-// updateDisplay was removed.
-// The systray.SetTooltip("CriptoMenu") in onReady is sufficient as a base.
 
 func watchConfig() {
 	ticker := time.NewTicker(2 * time.Second)
@@ -348,31 +341,93 @@ func watchConfig() {
 func loadAndSetConfig() {
 	cfg, err := loadConfig()
 	if err != nil {
-		// If it's a JSON syntax error, DO NOT overwrite the file.
-		if strings.Contains(err.Error(), "could not unmarshal") {
-			log.Printf("Config file has invalid JSON, ignoring changes: %v", err)
+		// Check if file does not exist (or wrapped "no such file" error)
+		if os.IsNotExist(err) || strings.Contains(err.Error(), "no such file") {
+			log.Println("Config file not found. Creating default with comments...")
+			
+			// Create the default file with comments
+			if createErr := createDefaultConfig(); createErr != nil {
+				log.Printf("Error creating default config: %v", createErr)
+			}
+
+			// Load it back
+			cfg, err = loadConfig()
+			if err != nil {
+				log.Printf("Error loading newly created config: %v", err)
+				cfg = &Config{Pairs: []string{"BTCUSDC", "ETHUSDC"}} // Fallback
+			}
+		} else if strings.Contains(err.Error(), "toml:") || strings.Contains(err.Error(), "decode") {
+			// TOML syntax error
+			log.Printf("Config file has invalid TOML, ignoring changes: %v", err)
 			
 			configMutex.RLock()
 			hasConfig := activeConfig != nil
 			configMutex.RUnlock()
 
 			if hasConfig {
-				// We have a valid loaded config, so just ignore the broken file reload
 				return
 			}
-			
-			// Startup with bad file: use default in memory, but do not overwrite user's file
+			// Startup with bad file -> Fallback
 			cfg = &Config{Pairs: []string{"BTCUSDC", "ETHUSDC"}}
 		} else {
-			// File likely doesn't exist, create default and save
-			log.Printf("Error loading config, using default: %v", err)
+			// Other errors
+			log.Printf("Error loading config: %v", err)
 			cfg = &Config{Pairs: []string{"BTCUSDC", "ETHUSDC"}}
-			_ = saveConfigInternal(cfg)
 		}
 	}
-	configMutex.Lock()
-	activeConfig = cfg
-	configMutex.Unlock()
+	
+	if cfg != nil {
+		configMutex.Lock()
+		activeConfig = cfg
+		configMutex.Unlock()
+	}
+}
+
+func createDefaultConfig() error {
+	path, err := getConfigFilePath()
+	if err != nil {
+		return err
+	}
+
+	defaultContent := `# Configuration for CriptoMenu
+#
+# Pairs: List of Binance trading pairs to display in the menu.
+#        Example: ["BTCUSDC", "ETHUSDC"]
+#
+# Alerts: Define price alerts.
+#   - pair: The trading pair to monitor.
+#   - target: The price level to trigger the alert.
+#   - condition: "above" (trigger when price goes above target) or "below" (trigger when price drops below target).
+#   - active: Set to true to enable the alert. The app will set this to false after it triggers.
+
+Pairs = [
+    "BTCUSDC",
+    "ETHUSDC",
+    "ADAUSDC",
+    "SOLUSDC",
+    "LTCUSDC"
+]
+
+# Example Alert (Uncomment and modify to use)
+# [[Alerts]]
+#   pair = "BTCUSDC"
+#   target = 100000.0
+#   condition = "above" # "above" or "below"
+#   active = true
+
+# [[Alerts]]
+#   pair = "ETHUSDC"
+#   target = 10000.0
+#   condition = "below" # "above" or "below"
+#   active = true
+
+# [[Alerts]]
+#   pair = "LTCUSDC"
+#   target = 50.0
+#   condition = "below" # "above" or "below"
+#   active = false
+`
+	return os.WriteFile(path, []byte(defaultContent), 0644)
 }
 
 func updatePairsMenu() {
@@ -414,7 +469,7 @@ func handlePairClick(index int) {
 		selectedPair := activeConfig.Pairs[index]
 		log.Printf("Selected pair: %s", selectedPair)
 		setPair(selectedPair)
-		systray.SetTitle(fmt.Sprintf("%s: ...", selectedPair)) // Reverted to original
+		systray.SetTitle(fmt.Sprintf("%s: ...", selectedPair))
         
         // Trigger immediate update
         select {
@@ -440,11 +495,19 @@ func getPair() string {
 // --- Config Helpers ---
 
 func getConfigFilePath() (string, error) {
+	// Check current working directory first (Development mode)
+	localPath, _ := filepath.Abs(".criptomenu.toml")
+	if _, err := os.Stat(localPath); err == nil {
+		// Only log this once or it might be spammy, but for now it's helpful
+		return localPath, nil
+	}
+
+	// Fallback to Home directory (Production/App mode)
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, ".criptomenu.json"), nil
+	return filepath.Join(home, ".criptomenu.toml"), nil
 }
 
 func loadConfig() (*Config, error) {
@@ -459,9 +522,9 @@ func loadConfig() (*Config, error) {
 	}
 
 	var cfg Config
-	err = json.Unmarshal(file, &cfg)
+	err = toml.Unmarshal(file, &cfg)
 	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal config JSON: %w", err)
+		return nil, fmt.Errorf("could not unmarshal config TOML: %w", err)
 	}
 	return &cfg, nil
 }
@@ -472,9 +535,9 @@ func saveConfigInternal(cfg *Config) error {
 		return err
 	}
 
-	data, err := json.MarshalIndent(cfg, "", "  ")
+	data, err := toml.Marshal(cfg)
 	if err != nil {
-		return fmt.Errorf("could not marshal config to JSON: %w", err)
+		return fmt.Errorf("could not marshal config to TOML: %w", err)
 	}
 
 	err = os.WriteFile(path, data, 0644)
@@ -494,4 +557,3 @@ func getIcon() []byte {
 	}
 	return decoded
 }
-

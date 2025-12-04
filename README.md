@@ -7,11 +7,11 @@ CriptoMenu is a simple macOS menubar application that allows you to monitor cryp
 *   **Real-time Quotes:** Displays the price of a selected cryptocurrency pair directly in the menubar.
 *   **Binance Support:** Connects to the Binance Spot API to fetch price data.
 *   **Rounded Prices:** Prices are displayed rounded to two decimal places.
-*   **Flexible Configuration:** Define the cryptocurrency pairs to monitor via a JSON configuration file.
+*   **Flexible Configuration:** Define the cryptocurrency pairs to monitor via a TOML configuration file.
 *   **Interactive Menu:**
     *   **Monitored Pairs:** Select the pair to display on the fly from your configured list.
     *   **Market Chart:** Opens the Binance trading view for the currently selected cryptocurrency pair.
-    *   **Edit Config:** Opens the `~/.criptomenu.json` configuration file in your default editor for easy modification.
+    *   **Edit Config:** Opens the `~/.criptomenu.toml` configuration file in your default editor for easy modification.
     *   **About:** Opens the project's GitHub page in your default browser.
     *   **Immediate Price Update:** Price in the menubar updates instantly when a new pair is selected.
     *   **Automatic Config Update:** The "Monitored Pairs" menu automatically updates when you save changes to the configuration file.
@@ -84,7 +84,7 @@ CriptoMenu is a simple macOS menubar application that allows you to monitor cryp
 1.  **Launch the application:** Double-click on `CriptoMenu.app`.
 2.  **Configure monitored pairs:**
     *   Click on the application icon in the menubar.
-    *   Select "Edit Config". This will open the `~/.criptomenu.json` file in your default editor.
+    *   Select "Edit Config". This will open the `~/.criptomenu.toml` file in your default editor.
     *   Modify the `"Pairs"` array with the cryptocurrency pairs you wish to monitor (e.g., `["BTCUSDC", "ETHUSDC", "BNBUSDT"]`).
     *   Save the file. The "Monitored Pairs" menu will update automatically.
 3.  **Select the pair to display:**
@@ -92,43 +92,28 @@ CriptoMenu is a simple macOS menubar application that allows you to monitor cryp
     *   Hover over "Monitored Pairs".
     *   Click on the pair you want to display in the menubar.
 
-## Configuration Example
+### Example Configuration
 
-You can configure the application by editing the `~/.criptomenu.json` file. This file supports both a list of pairs to display in the menu and a list of alerts to trigger notifications when price targets are met.
-
-Here is an example of a complete configuration file:
-
-```json
-{
-  "Pairs": [
+```toml
+# Pairs to display in the menu
+Pairs = [
     "BTCUSDC",
     "ETHUSDC",
-    "BNBUSDT"
-  ],
-  "Alerts": [
-    {
-      "id": "btc-high-alert",
-      "pair": "BTCUSDC",
-      "target": 70000.0,
-      "condition": "above",
-      "active": true
-    },
-    {
-      "id": "eth-low-alert",
-      "pair": "ETHUSDC",
-      "target": 3500.0,
-      "condition": "below",
-      "active": true
-    },
-    {
-      "id": "bnb-high-alert",
-      "pair": "BNBUSDT",
-      "target": 600.0,
-      "condition": "above",
-      "active": true
-    }
-  ]
-}
+    "ADAUSDC"
+]
+
+# Price Alerts
+[[Alerts]]
+  pair = "BTCUSDC"
+  target = 100000.0
+  condition = "above"
+  active = true
+
+[[Alerts]]
+  pair = "ETHUSDC"
+  target = 2000.0
+  condition = "below"
+  active = false
 ```
 
 ### Configuration Fields
@@ -147,7 +132,7 @@ Here is an example of a complete configuration file:
     ```bash
     touch CriptoMenu.app; killall Dock; killall Finder
     ```
-*   **Prices not updating / Errors:** Ensure you have an active internet connection. Verify that the pair symbols in `~/.criptomenu.json` are valid on Binance (e.g., `BTCUSDC`, not `BTC-USDC`).
+*   **Prices not updating / Errors:** Ensure you have an active internet connection. Verify that the pair symbols in `~/.criptomenu.toml` are valid on Binance (e.g., `BTCUSDC`, not `BTC-USDC`).
 
 ## Technologies Used
 

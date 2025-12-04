@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2025-12-04
+
+### Changed
+- **Configuration Format:** Migrated from JSON to TOML (`.criptomenu.toml`) for improved readability and ease of editing.
+- **Config Logic:** The application now checks for a local `.criptomenu.toml` in the current directory first (Dev Mode) before falling back to `~/.criptomenu.toml`.
+
+### Added
+- **Auto-Configuration:** Automatically creates a default `~/.criptomenu.toml` file with helpful comments and examples if no configuration file is found.
+
+### Removed
+- Removed support for `config.json` and `~/.criptomenu.json`.
+
 ## [1.2.0] - 2025-12-03
 
 ### Changed
