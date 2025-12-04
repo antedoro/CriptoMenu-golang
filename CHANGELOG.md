@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2025-12-04
+
+### Added
+- **Pair Pinning:** Added ability to "Pin" a specific cryptocurrency pair to the menubar, stopping automatic rotation. A new "Pin/Unpin [Pair]" menu item is available.
+- **Improved Config Path Detection:** Enhanced `getConfigFilePath` to robustly search for `.criptomenu.toml` relative to the executable (supporting nested app bundles) before falling back to the home directory.
+- **Config Error Alerts:** The application now displays a critical macOS alert if the configuration file fails to load or parse (e.g., invalid TOML), providing immediate user feedback.
+
+### Changed
+- **Alert Notifications:** macOS alerts now use a custom icon (`icon.png`) for `display dialog` notifications, with a fallback to `display alert` if the icon cannot be found or dialog fails.
+- **"Edit Config" Menu:** The tooltip for the "Edit Config" menu item now explicitly displays the full path to the configuration file currently being used.
+
+### Fixed
+- Resolved a TOML parsing error (`expected newline but got U+006F 'o'`) caused by invalid syntax in the default `condition` example in `.criptomenu.toml`.
+
 ## [1.21.0] - 2025-12-04
 
 ### Changed
