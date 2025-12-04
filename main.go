@@ -260,7 +260,7 @@ func checkAlerts(pair string, price float64) {
 	cfg := activeConfig
 	alertsChanged := false
 
-	for i, alert := range cfg.Alerts {
+	for _, alert := range cfg.Alerts {
 		if !alert.Active {
 			continue
 		}
@@ -287,7 +287,16 @@ func checkAlerts(pair string, price float64) {
 				go func(message string) {
 					// Escape double quotes in the message to prevent script errors
 					safeMsg := strings.ReplaceAll(message, "\"", "\\\"")
-					script := fmt.Sprintf("display alert \"CriptoMenu Alert\" message \"%s\"", safeMsg)
+					
+					iconPath := "/Users/antedoro/Desktop/CriptoMenu-golang/icon.png"
+					script := fmt.Sprintf(`
+set iconPath to POSIX file "%s"
+try
+	display dialog "%s" with title "CriptoMenu Alert" buttons {"OK"} default button "OK" with icon iconPath
+on error
+	display alert "CriptoMenu Alert" message "%s"
+end try`, iconPath, safeMsg, safeMsg)
+
 					err := exec.Command("osascript", "-e", script).Run()
 					if err != nil {
 						log.Printf("Error sending macOS alert: %v", err)
@@ -301,8 +310,8 @@ func checkAlerts(pair string, price float64) {
 			}
 
 			// Deactivate alert
-			cfg.Alerts[i].Active = false
-			alertsChanged = true
+			// cfg.Alerts[i].Active = false
+			// alertsChanged = true
 		}
 	}
 
