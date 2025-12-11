@@ -174,19 +174,19 @@ func onReady() {
 		}
 	}()
 
-	// "About" menu item
-	mAbout := systray.AddMenuItem("About", "Open GitHub project page")
-	go func() {
-		for range mAbout.ClickedCh {
-			_ = exec.Command("open", "https://github.com/antedoro/CriptoMenu-golang").Run()
-		}
-	}()
-
 	// "Check for Update..." menu item
 	mCheckUpdate := systray.AddMenuItem("Check for Update...", "Check for new releases on GitHub")
 	go func() {
 		for range mCheckUpdate.ClickedCh {
 			checkForUpdates()
+		}
+	}()
+
+	// "About" menu item
+	mAbout := systray.AddMenuItem("About", "Open GitHub project page")
+	go func() {
+		for range mAbout.ClickedCh {
+			_ = exec.Command("open", "https://github.com/antedoro/CriptoMenu-golang").Run()
 		}
 	}()
 
