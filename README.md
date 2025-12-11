@@ -1,6 +1,7 @@
 # CriptoMenu
 
 CriptoMenu is a simple macOS menubar application that allows you to monitor cryptocurrency quotes from Binance in real-time.
+[Github Project Link](https://github.com/antedoro/CriptoMenu-golang)
 
 ## Features
 
@@ -13,6 +14,7 @@ CriptoMenu is a simple macOS menubar application that allows you to monitor cryp
     *   **Market Chart:** Opens the Binance trading view for the currently selected cryptocurrency pair.
     *   **Edit Config:** Opens the `~/.criptomenu.toml` configuration file in your default editor for easy modification.
     *   **About:** Opens the project's GitHub page in your default browser.
+    *   **Check for Update:** Checks for new releases on the GitHub repository and notifies if an update is available.
     *   **Immediate Price Update:** Price in the menubar updates instantly when a new pair is selected.
     *   **Automatic Config Update:** The "Monitored Pairs" menu automatically updates when you save changes to the configuration file.
     *   **Quit:** Exits the application.
@@ -140,3 +142,7 @@ Pairs = [
 *   **systray:** Library for managing the system tray icon and menu.
 *   **Binance Connector Go:** Library for interacting with the Binance API.
 *   **AppleScript (osascript):** Used to open the configuration file with the default editor.
+
+## Source Code
+
+The source code is available on GitHub: [https://github.com/antedoro/CriptoMenu-golang](https://github.com/antedoro/CriptoMenu-golang)

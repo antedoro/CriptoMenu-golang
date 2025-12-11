@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2025-12-11
+
+### Added
+- **Check for Update:** Implemented a new menu item "Check for Update..." that allows users to manually check for new releases on the GitHub repository. It notifies the user if a new version is available and provides a link to the release page.
+- **README Update:** Updated `README.md` to include information about the new "Check for Update" feature and added a "Source Code" section with a link to the GitHub repository.
+
 ## [1.22.0] - 2025-12-04
 
 ### Added
