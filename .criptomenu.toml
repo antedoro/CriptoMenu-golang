@@ -1,25 +1,8 @@
-# Configuration for CriptoMenu (Development)
-#
-# Pairs: List of Binance trading pairs to display in the menu.
-# Alerts: Define price alerts.
+Pairs = ['BTCUSDC', 'ETHUSDC', 'ADAUSDC', 'SOLUSDC', 'LTCUSDC']
+pinned_pair = 'BTCUSDC'
 
-Pairs = [
-    "BTCUSDC",
-    "ETHUSDC",
-    "ADAUSDC",
-    "SOLUSDC",
-    "LTCUSDC"
-]
-
-# Example Alert (Uncomment and modify to use)
 [[Alerts]]
-  pair = "BTCUSDC"
-  target = 100000.0
-  condition = "above" # or "below"
-  active = true
-
-# [[Alerts]]
-#   pair = "LTCUSDC"
-#   target = 50.0
-#   condition = "below" # "above" or "below"
-#   active = false
+pair = 'BTCUSDC'
+target = 100000.0
+condition = 'above'
+active = true
