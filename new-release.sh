@@ -20,7 +20,7 @@ if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
-echo "=== Inizio procedura di rilascio per la versione $VERSION ==="
+echo "=== Inizio procedura di rilascio per la versione $VERSION (Universal Binary) ==="
 
 # --- Estrazione note di rilascio ---
 echo "--- Estrazione note di rilascio da CHANGELOG.md ---"
@@ -65,7 +65,7 @@ fi
 echo "✔ Versione aggiornata in update.go"
 
 # 2. Esegui lo script di build
-echo "--- Esecuzione build_macos.sh ---"
+echo "--- Esecuzione build_macos.sh (Universal Binary) ---"
 ./build_macos.sh
 if [ $? -ne 0 ]; then
     echo "Errore: La build è fallita."

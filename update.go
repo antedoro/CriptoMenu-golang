@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	CurrentVersion = "1.24.2"
+	CurrentVersion = "1.24.3"
 )
 
 // GitHubRelease struct to parse release info
@@ -24,6 +25,50 @@ type GitHubRelease struct {
 }
 
 // --- Update Logic ---
+
+// isNewer checks if the latest version is semantically newer than the current version.
+// Assumes version format "X.Y.Z".
+func isNewer(current, latest string) bool {
+	parse := func(v string) []int {
+		parts := strings.Split(v, ".")
+		var res []int
+		for _, p := range parts {
+			if val, err := strconv.Atoi(p); err == nil {
+				res = append(res, val)
+			}
+		}
+		return res
+	}
+
+	cParts := parse(current)
+	lParts := parse(latest)
+
+	// Compare major, minor, patch
+	maxLen := len(cParts)
+	if len(lParts) > maxLen {
+		maxLen = len(lParts)
+	}
+
+	for i := 0; i < maxLen; i++ {
+		cVal := 0
+		if i < len(cParts) {
+			cVal = cParts[i]
+		}
+		lVal := 0
+		if i < len(lParts) {
+			lVal = lParts[i]
+		}
+
+		if lVal > cVal {
+			return true
+		}
+		if lVal < cVal {
+			return false
+		}
+	}
+	// Equal versions
+	return false
+}
 
 func checkForUpdates() {
 	log.Println("Checking for updates...")
@@ -52,7 +97,7 @@ func checkForUpdates() {
 	latestVersion := strings.TrimPrefix(release.TagName, "v")
 	log.Printf("Latest version: %s, Current version: %s", latestVersion, CurrentVersion)
 
-	if latestVersion != CurrentVersion {
+	if isNewer(CurrentVersion, latestVersion) {
 		msg := fmt.Sprintf("A new version (%s) is available!\nCurrent: %s", latestVersion, CurrentVersion)
 		if runtime.GOOS == "darwin" {
 			go func() {

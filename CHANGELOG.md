@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.3] - 2026-01-05
+
+### Added
+- **Universal Binary:** The application is now built as a Universal Binary, natively supporting both Intel (amd64) and Apple Silicon (arm64) Macs in a single executable.
+
+### Fixed
+- **Update Logic:** Improved the "Check for Update" logic to use semantic versioning comparison. This prevents false positive "Update Available" notifications when the installed version is newer than or equal to the latest release on GitHub.
+
 ## [1.24.2] - 2026-01-05
 
 ### Fixed

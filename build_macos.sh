@@ -29,14 +29,40 @@ echo "Creating .app bundle structure..."
 mkdir -p "$MACOS_DIR"
 mkdir -p "$RESOURCES_DIR"
 
-# Build Go executable
-echo "Building Go executable for macOS..."
-CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o "$EXECUTABLE_PATH" .
+# Build Go executables (Universal Binary)
+echo "Building Go executable for macOS (Universal Binary)..."
+
+# Build for Intel (amd64)
+echo "  - Building for Intel (amd64)..."
+CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o "$BUILD_DIR/amd64_binary" .
 if [ $? -ne 0 ]; then
-    echo "Error: Go build failed."
+    echo "Error: Go build for amd64 failed."
     exit 1
 fi
-echo "Executable built: $EXECUTABLE_PATH"
+
+# Build for Apple Silicon (arm64)
+echo "  - Building for Apple Silicon (arm64)..."
+CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o "$BUILD_DIR/arm64_binary" .
+if [ $? -ne 0 ]; then
+    echo "Error: Go build for arm64 failed."
+    # Clean up amd64 binary
+    rm -f "$BUILD_DIR/amd64_binary"
+    exit 1
+fi
+
+# Combine binaries using lipo
+echo "  - Combining binaries into Universal Binary..."
+lipo -create -output "$EXECUTABLE_PATH" "$BUILD_DIR/amd64_binary" "$BUILD_DIR/arm64_binary"
+if [ $? -ne 0 ]; then
+    echo "Error: lipo failed to create universal binary."
+    rm -f "$BUILD_DIR/amd64_binary" "$BUILD_DIR/arm64_binary"
+    exit 1
+fi
+
+# Clean up intermediate binaries
+rm -f "$BUILD_DIR/amd64_binary" "$BUILD_DIR/arm64_binary"
+
+echo "Universal executable built: $EXECUTABLE_PATH"
 
 # Generate .icns icon file
 echo "Generating .icns icon from $ICON_PNG..."
@@ -88,7 +114,7 @@ cat << EOF > "$APP_BUNDLE/Contents/Info.plist"
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.24.2</string>
+	<string>1.24.3</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHighResolutionCapable</key>
