@@ -79,12 +79,18 @@ echo "--- Creazione archivio ZIP ---"
 ZIP_PATH="build/CriptoMenu.app.zip"
 # Rimuovi zip precedente se esiste per sicurezza
 rm -f "$ZIP_PATH"
-zip -r "$ZIP_PATH" "build/CriptoMenu.app" > /dev/null
+
+# Spostati nella directory build per zippare solo il contenuto
+pushd build > /dev/null
+zip -r "CriptoMenu.app.zip" "CriptoMenu.app" > /dev/null
 if [ $? -ne 0 ]; then
     echo "Errore: Creazione zip fallita."
+    popd > /dev/null
     rm -f "$RELEASE_NOTES_FILE"
     exit 1
 fi
+popd > /dev/null
+
 echo "✔ Archivio creato: $ZIP_PATH"
 
 # 4. Operazioni Git

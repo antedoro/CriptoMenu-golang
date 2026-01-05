@@ -3,6 +3,22 @@
 CriptoMenu is a simple macOS menubar application that allows you to monitor cryptocurrency quotes from Binance in real-time.
 [Github Project Link](https://github.com/antedoro/CriptoMenu-golang)
 
+![App Screenshot](screenshot/app-screenshot.png)
+
+## ⚠️ Important: Authorize Application on macOS
+
+Since CriptoMenu is not signed with an Apple Developer certificate, macOS will block it the first time you try to open it. Follow these steps to authorize it:
+
+1.  **Open CriptoMenu.app**: You will see a warning dialog stating that the app cannot be opened because it is from an unidentified developer.
+    ![Alert Dialog](screenshot/alert.png)
+2.  **Open System Settings**: Go to **System Settings** > **Privacy & Security**.
+3.  **Allow anyway**: Scroll down to the **Security** section. You will see a message about "CriptoMenu.app". Click on **Open Anyway**.
+    ![Privacy and Security](screenshot/privacy&secutity.png)
+4.  **Confirm**: Enter your password if requested and click **Open** on the final confirmation dialog.
+    ![Authorize](screenshot/authorize.png)
+
+---
+
 ## Features
 
 *   **Real-time Quotes:** Displays the price of a selected cryptocurrency pair directly in the menubar.
