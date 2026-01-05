@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.2] - 2026-01-05
+
+### Fixed
+- **Release Archive:** Fixed the zip archive structure in the release. The zip file now directly contains the `.app` bundle instead of a `build` folder, simplifying installation.
+
 ## [1.24.1] - 2026-01-05
 
 ### Fixed
