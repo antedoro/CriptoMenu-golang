@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	CurrentVersion = "1.24.1"
+	CurrentVersion = "1.24.2"
 )
 
 // GitHubRelease struct to parse release info

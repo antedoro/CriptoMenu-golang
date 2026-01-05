@@ -88,7 +88,7 @@ cat << EOF > "$APP_BUNDLE/Contents/Info.plist"
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.24.1</string>
+	<string>1.24.2</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHighResolutionCapable</key>
