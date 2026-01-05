@@ -41,16 +41,28 @@ else
     USE_GENERATED_NOTES=false
 fi
 
-# 1. Aggiorna la versione in build_macos.sh
+# 1. Aggiorna la versione in build_macos.sh e update.go
+echo "--- Aggiornamento versione nei file sorgente ---"
+
+# Aggiorna build_macos.sh
 # Cerca "CFBundleShortVersionString" e sostituisce la riga successiva con la nuova versione
 sed -i '' "/CFBundleShortVersionString/{n;s/<string>.*<\/string>/<string>$VERSION<\/string>/;}" build_macos.sh
-
 if [ $? -ne 0 ]; then
     echo "Errore: Impossibile aggiornare la versione in build_macos.sh"
     rm -f "$RELEASE_NOTES_FILE"
     exit 1
 fi
 echo "✔ Versione aggiornata in build_macos.sh"
+
+# Aggiorna update.go
+# Cerca CurrentVersion = "..." e lo sostituisce
+sed -i '' "s/CurrentVersion = \"[0-9]*\.[0-9]*\.[0-9]*\"/CurrentVersion = \"$VERSION\"/" update.go
+if [ $? -ne 0 ]; then
+    echo "Errore: Impossibile aggiornare la versione in update.go"
+    rm -f "$RELEASE_NOTES_FILE"
+    exit 1
+fi
+echo "✔ Versione aggiornata in update.go"
 
 # 2. Esegui lo script di build
 echo "--- Esecuzione build_macos.sh ---"
@@ -78,11 +90,11 @@ echo "✔ Archivio creato: $ZIP_PATH"
 # 4. Operazioni Git
 echo "--- Operazioni Git ---"
 
-# Controlla se ci sono cambiamenti in build_macos.sh da committare
-if git diff --quiet build_macos.sh; then
-    echo "Nessun cambiamento rilevato in build_macos.sh (la versione era già aggiornata?)"
+# Controlla se ci sono cambiamenti in build_macos.sh o update.go da committare
+if git diff --quiet build_macos.sh update.go; then
+    echo "Nessun cambiamento rilevato in build_macos.sh o update.go (la versione era già aggiornata?)"
 else
-    git add build_macos.sh
+    git add build_macos.sh update.go
     git commit -m "Bump version to $VERSION"
     echo "✔ Commit effettuato"
     git push
