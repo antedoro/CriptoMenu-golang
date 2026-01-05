@@ -5,100 +5,41 @@ APP_NAME="CriptoMenu"
 ICON_PNG="icon.png" # Path to your source PNG icon
 BUILD_DIR="./build" # Directory for build artifacts
 
-# --- Script Start ---
+# Function to build the app for a specific architecture
+build_app() {
+    local ARCH=$1
+    local SUFFIX=$2
+    local APP_BUNDLE_NAME="${APP_NAME}_${SUFFIX}.app"
+    local FULL_APP_PATH="$BUILD_DIR/$APP_BUNDLE_NAME"
+    local MACOS_DIR="$FULL_APP_PATH/Contents/MacOS"
+    local RESOURCES_DIR="$FULL_APP_PATH/Contents/Resources"
+    local EXECUTABLE_PATH="$MACOS_DIR/$APP_NAME"
 
-echo "Starting macOS app build for $APP_NAME..."
+    echo "--- Building for $SUFFIX ($ARCH) ---"
 
-# Ensure build directory exists
-mkdir -p "$BUILD_DIR"
+    # Create .app bundle structure
+    mkdir -p "$MACOS_DIR"
+    mkdir -p "$RESOURCES_DIR"
 
-# Define output .app bundle path
-APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
-MACOS_DIR="$APP_BUNDLE/Contents/MacOS"
-RESOURCES_DIR="$APP_BUNDLE/Contents/Resources"
-EXECUTABLE_PATH="$MACOS_DIR/$APP_NAME"
+    # Build Go executable
+    echo "Compiling Go binary..."
+    CGO_ENABLED=1 GOOS=darwin GOARCH=$ARCH go build -o "$EXECUTABLE_PATH" .
+    if [ $? -ne 0 ]; then
+        echo "Error: Go build failed for $ARCH."
+        exit 1
+    fi
 
-# Clean up previous build
-echo "Cleaning up previous build artifacts..."
-rm -rf "$APP_BUNDLE"
-rm -rf "$BUILD_DIR/$APP_NAME.iconset"
-rm -f "$BUILD_DIR/$APP_NAME.icns"
+    # Copy Icon (assuming it was generated previously in BUILD_DIR)
+    if [ -f "$BUILD_DIR/AppIcon.icns" ]; then
+        cp "$BUILD_DIR/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+    else
+        echo "Warning: AppIcon.icns not found."
+    fi
 
-# Create .app bundle structure
-echo "Creating .app bundle structure..."
-mkdir -p "$MACOS_DIR"
-mkdir -p "$RESOURCES_DIR"
-
-# Build Go executables (Universal Binary)
-echo "Building Go executable for macOS (Universal Binary)..."
-
-# Build for Intel (amd64)
-echo "  - Building for Intel (amd64)..."
-CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o "$BUILD_DIR/amd64_binary" .
-if [ $? -ne 0 ]; then
-    echo "Error: Go build for amd64 failed."
-    exit 1
-fi
-
-# Build for Apple Silicon (arm64)
-echo "  - Building for Apple Silicon (arm64)..."
-CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o "$BUILD_DIR/arm64_binary" .
-if [ $? -ne 0 ]; then
-    echo "Error: Go build for arm64 failed."
-    # Clean up amd64 binary
-    rm -f "$BUILD_DIR/amd64_binary"
-    exit 1
-fi
-
-# Combine binaries using lipo
-echo "  - Combining binaries into Universal Binary..."
-lipo -create -output "$EXECUTABLE_PATH" "$BUILD_DIR/amd64_binary" "$BUILD_DIR/arm64_binary"
-if [ $? -ne 0 ]; then
-    echo "Error: lipo failed to create universal binary."
-    rm -f "$BUILD_DIR/amd64_binary" "$BUILD_DIR/arm64_binary"
-    exit 1
-fi
-
-# Clean up intermediate binaries
-rm -f "$BUILD_DIR/amd64_binary" "$BUILD_DIR/arm64_binary"
-
-echo "Universal executable built: $EXECUTABLE_PATH"
-
-# Generate .icns icon file
-echo "Generating .icns icon from $ICON_PNG..."
-ICONSET_DIR="$BUILD_DIR/$APP_NAME.iconset"
-mkdir -p "$ICONSET_DIR"
-
-# Check if icon.png exists
-if [ ! -f "$ICON_PNG" ]; then
-    echo "Error: Icon file not found at $ICON_PNG. Please ensure it exists."
-    exit 1
-fi
-
-# Resize images and create .iconset
-sips -z 16 16     "$ICON_PNG" --out "$ICONSET_DIR/icon_16x16.png"
-sips -z 32 32     "$ICON_PNG" --out "$ICONSET_DIR/icon_16x16@2x.png"
-sips -z 32 32     "$ICON_PNG" --out "$ICONSET_DIR/icon_32x32.png"
-sips -z 64 64     "$ICON_PNG" --out "$ICONSET_DIR/icon_32x32@2x.png"
-sips -z 128 128   "$ICON_PNG" --out "$ICONSET_DIR/icon_128x128.png"
-sips -z 256 256   "$ICON_PNG" --out "$ICONSET_DIR/icon_128x128@2x.png"
-sips -z 256 256   "$ICON_PNG" --out "$ICONSET_DIR/icon_256x256.png"
-sips -z 512 512   "$ICON_PNG" --out "$ICONSET_DIR/icon_256x256@2x.png"
-sips -z 512 512   "$ICON_PNG" --out "$ICONSET_DIR/icon_512x512.png"
-sips -z 1024 1024 "$ICON_PNG" --out "$ICONSET_DIR/icon_512x512@2x.png"
-
-# Convert .iconset to .icns
-iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/AppIcon.icns"
-if [ $? -ne 0 ]; then
-    echo "Error: iconutil failed."
-    exit 1
-fi
-echo "Icon generated: $RESOURCES_DIR/AppIcon.icns"
-
-# Create Info.plist
-echo "Creating Info.plist..."
-APP_NAME_LOWER=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]')
-cat << EOF > "$APP_BUNDLE/Contents/Info.plist"
+    # Create Info.plist
+    echo "Creating Info.plist..."
+    local APP_NAME_LOWER=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]')
+    cat << EOF > "$FULL_APP_PATH/Contents/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -114,7 +55,7 @@ cat << EOF > "$APP_BUNDLE/Contents/Info.plist"
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.24.3</string>
+	<string>1.24.4</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHighResolutionCapable</key>
@@ -122,29 +63,62 @@ cat << EOF > "$APP_BUNDLE/Contents/Info.plist"
 </dict>
 </plist>
 EOF
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to create Info.plist."
+
+    # Create PkgInfo
+    echo "APPL????" > "$FULL_APP_PATH/Contents/PkgInfo"
+
+    # Touch the app bundle
+    touch "$FULL_APP_PATH"
+    echo "✔ Created $APP_BUNDLE_NAME"
+}
+
+# --- Script Start ---
+
+echo "Starting macOS app build for $APP_NAME..."
+
+# Ensure build directory exists and clean it
+mkdir -p "$BUILD_DIR"
+rm -rf "$BUILD_DIR"/*
+
+# --- Generate Icon (Once) ---
+echo "Generating .icns icon from $ICON_PNG..."
+ICONSET_DIR="$BUILD_DIR/$APP_NAME.iconset"
+mkdir -p "$ICONSET_DIR"
+
+if [ -f "$ICON_PNG" ]; then
+    sips -z 16 16     "$ICON_PNG" --out "$ICONSET_DIR/icon_16x16.png" > /dev/null
+    sips -z 32 32     "$ICON_PNG" --out "$ICONSET_DIR/icon_16x16@2x.png" > /dev/null
+    sips -z 32 32     "$ICON_PNG" --out "$ICONSET_DIR/icon_32x32.png" > /dev/null
+    sips -z 64 64     "$ICON_PNG" --out "$ICONSET_DIR/icon_32x32@2x.png" > /dev/null
+    sips -z 128 128   "$ICON_PNG" --out "$ICONSET_DIR/icon_128x128.png" > /dev/null
+    sips -z 256 256   "$ICON_PNG" --out "$ICONSET_DIR/icon_128x128@2x.png" > /dev/null
+    sips -z 256 256   "$ICON_PNG" --out "$ICONSET_DIR/icon_256x256.png" > /dev/null
+    sips -z 512 512   "$ICON_PNG" --out "$ICONSET_DIR/icon_256x256@2x.png" > /dev/null
+    sips -z 512 512   "$ICON_PNG" --out "$ICONSET_DIR/icon_512x512.png" > /dev/null
+    sips -z 1024 1024 "$ICON_PNG" --out "$ICONSET_DIR/icon_512x512@2x.png" > /dev/null
+
+    iconutil -c icns "$ICONSET_DIR" -o "$BUILD_DIR/AppIcon.icns"
+    rm -rf "$ICONSET_DIR"
+    echo "Icon generated at $BUILD_DIR/AppIcon.icns"
+else
+    echo "Error: Icon file not found at $ICON_PNG."
     exit 1
 fi
-echo "Info.plist created."
 
-# Create PkgInfo
-echo "Creating PkgInfo..."
-echo "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to create PkgInfo."
-    exit 1
-fi
-echo "PkgInfo created."
+# --- Build Versions ---
 
-# Clean up temporary iconset directory
-echo "Cleaning up temporary iconset directory..."
-rm -rf "$ICONSET_DIR"
+# 1. Build for Intel (amd64)
+build_app "amd64" "Intel"
 
-# Touch the app bundle to refresh Finder metadata
-echo "Touching app bundle to refresh Finder metadata..."
-touch "$APP_BUNDLE"
+# 2. Build for Apple Silicon (arm64)
+build_app "arm64" "AppleSilicon"
 
-echo "Build complete! Your application is located at $APP_BUNDLE"
-echo "To run, navigate to the build directory and double-click CriptoMenu.app"
-echo "If the icon does not appear, try running: killall Dock; killall Finder"
+# Clean up common icon
+rm -f "$BUILD_DIR/AppIcon.icns"
+
+echo "=========================================="
+echo "Build complete!"
+echo "Artifacts:"
+echo " - $BUILD_DIR/${APP_NAME}_Intel.app"
+echo " - $BUILD_DIR/${APP_NAME}_AppleSilicon.app"
+echo "=========================================="
