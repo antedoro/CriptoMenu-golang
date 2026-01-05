@@ -20,7 +20,7 @@ if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
-echo "=== Inizio procedura di rilascio per la versione $VERSION (Universal Binary) ==="
+echo "=== Inizio procedura di rilascio per la versione $VERSION (Intel & Apple Silicon) ==="
 
 # --- Estrazione note di rilascio ---
 echo "--- Estrazione note di rilascio da CHANGELOG.md ---"
@@ -65,7 +65,7 @@ fi
 echo "✔ Versione aggiornata in update.go"
 
 # 2. Esegui lo script di build
-echo "--- Esecuzione build_macos.sh (Universal Binary) ---"
+echo "--- Esecuzione build_macos.sh ---"
 ./build_macos.sh
 if [ $? -ne 0 ]; then
     echo "Errore: La build è fallita."
@@ -74,24 +74,45 @@ if [ $? -ne 0 ]; then
 fi
 echo "✔ Build completata con successo"
 
-# 3. Comprimi l'applicazione
-echo "--- Creazione archivio ZIP ---"
-ZIP_PATH="build/CriptoMenu.app.zip"
-# Rimuovi zip precedente se esiste per sicurezza
-rm -f "$ZIP_PATH"
+# 3. Comprimi le applicazioni
+echo "--- Creazione archivi ZIP ---"
+
+ZIP_INTEL="build/CriptoMenu_Intel.zip"
+ZIP_ARM="build/CriptoMenu_AppleSilicon.zip"
+
+# Rimuovi zip precedenti se esistono
+rm -f "$ZIP_INTEL" "$ZIP_ARM"
 
 # Spostati nella directory build per zippare solo il contenuto
 pushd build > /dev/null
-zip -r "CriptoMenu.app.zip" "CriptoMenu.app" > /dev/null
-if [ $? -ne 0 ]; then
-    echo "Errore: Creazione zip fallita."
-    popd > /dev/null
-    rm -f "$RELEASE_NOTES_FILE"
-    exit 1
-fi
-popd > /dev/null
 
-echo "✔ Archivio creato: $ZIP_PATH"
+# Zip Intel
+if [ -d "CriptoMenu_Intel.app" ]; then
+    zip -r "CriptoMenu_Intel.zip" "CriptoMenu_Intel.app" > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "Errore: Creazione zip Intel fallita."
+        popd > /dev/null; rm -f "$RELEASE_NOTES_FILE"; exit 1
+    fi
+    echo "✔ Archivio Intel creato: $ZIP_INTEL"
+else
+    echo "Errore: CriptoMenu_Intel.app non trovato."
+    popd > /dev/null; rm -f "$RELEASE_NOTES_FILE"; exit 1
+fi
+
+# Zip Apple Silicon
+if [ -d "CriptoMenu_AppleSilicon.app" ]; then
+    zip -r "CriptoMenu_AppleSilicon.zip" "CriptoMenu_AppleSilicon.app" > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "Errore: Creazione zip Apple Silicon fallita."
+        popd > /dev/null; rm -f "$RELEASE_NOTES_FILE"; exit 1
+    fi
+    echo "✔ Archivio Apple Silicon creato: $ZIP_ARM"
+else
+    echo "Errore: CriptoMenu_AppleSilicon.app non trovato."
+    popd > /dev/null; rm -f "$RELEASE_NOTES_FILE"; exit 1
+fi
+
+popd > /dev/null
 
 # 4. Operazioni Git
 echo "--- Operazioni Git ---"
@@ -121,10 +142,10 @@ echo "--- Creazione Release GitHub ---"
 
 if [ "$USE_GENERATED_NOTES" = true ]; then
     # Usa --generate-notes se non abbiamo note dal changelog
-    gh release create "v$VERSION" "$ZIP_PATH" --title "v$VERSION" --generate-notes
+    gh release create "v$VERSION" "$ZIP_INTEL" "$ZIP_ARM" --title "v$VERSION" --generate-notes
 else
     # Usa il file delle note estratto
-    gh release create "v$VERSION" "$ZIP_PATH" --title "v$VERSION" --notes-file "$RELEASE_NOTES_FILE"
+    gh release create "v$VERSION" "$ZIP_INTEL" "$ZIP_ARM" --title "v$VERSION" --notes-file "$RELEASE_NOTES_FILE"
 fi
 
 EXIT_CODE=$?
