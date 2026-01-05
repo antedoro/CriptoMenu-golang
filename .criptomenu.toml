@@ -1,0 +1,14 @@
+Pairs = ['BTCUSDC', 'ETHUSDC', 'ADAUSDC', 'SOLUSDC', 'LTCUSDC']
+pinned_pair = 'BTCUSDC'
+
+[[Alerts]]
+pair = 'BTCUSDC'
+target = 92430.0
+condition = 'above'
+active = true
+
+[[Alerts]]
+pair = 'BTCUSDC'
+target = 92400.0
+condition = 'below'
+active = true
