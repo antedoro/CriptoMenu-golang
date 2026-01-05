@@ -1,0 +1,25 @@
+# Binaries for programs
+*.exe
+*.o
+*.a
+*.so
+bin/
+BinanceQuotations
+BinanceQuotationsApp
+
+# Build directory
+build/
+
+# Test binaries and cache for the current package
+*.test
+*.out
+/tmp
+/temp
+.DS_Store
+*.log
+
+# Dependencies
+vendor/
+
+# Go module cache
+.go/
