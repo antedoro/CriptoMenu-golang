@@ -69,6 +69,16 @@ EOF
 
     # Touch the app bundle
     touch "$FULL_APP_PATH"
+
+    # Ad-hoc code signing
+    echo "Signing app bundle..."
+    codesign --force --deep --sign - "$FULL_APP_PATH"
+    if [ $? -ne 0 ]; then
+        echo "Warning: Code signing failed."
+    else
+        echo "✔ Signed $APP_BUNDLE_NAME"
+    fi
+
     echo "✔ Created $APP_BUNDLE_NAME"
 }
 
